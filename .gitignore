@@ -1,0 +1,37 @@
+# QT compilations folders
+build-*/
+*-build-*
+build_*
+
+# QT users configurations
+*.pro.user
+*.pro.user.*
+CMakeLists.txt.user
+CMakeLists.txt.user.*
+
+# Generated files by C++ or QT during compile time
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+Makefile
+Makefile.*
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+qmlcache_loader.cpp
+*_qmltyperegistrations.cpp
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+.qt/
+.cmake/
+
+# System files
+.DS_Store
+Thumbs.db

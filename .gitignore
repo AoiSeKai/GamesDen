@@ -2,6 +2,7 @@
 build-*/
 *-build-*
 build_*
+**/build/
 
 # QT users configurations
 *.pro.user

@@ -1,18 +1,100 @@
 import QtQuick
 import QtQuick.Window
+import QtQuick.Layouts
 
+/// @brief Main menu contains a list of games
 Window {
-    width: 640
-    height: 480
+    // default size (9:16) on mobile
+    width: 360
+    height: 640
     visible: true
-    title: qsTr("GamesDen - Prototype")
-    color: "#2c3e50"
+    title: "GamesDen"
+    color: "#1e1e24"
 
-    Text {
-        anchors.centerIn: parent
-        text: "Test"
-        color: "white"
-        font.pixelSize: 24
-        font.bold: true
+    // List of games
+    ListModel {
+        id: gameModel
+        ListElement { title: "Animals"; placeholderColor: "#ff5e5b" }
+        ListElement { title: "TBD"; placeholderColor: "#00cecb" }
+        ListElement { title: "TBD"; placeholderColor: "#ffed66" }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 20
+        spacing: 20
+
+        // Title
+        Text {
+            text: "SELECT A GAME"
+            color: "white"
+            font.pixelSize: 22
+            font.bold: true
+            Layout.alignment: Qt.AlignHCenter
+        }
+
+        // drop-down list
+        ListView {
+            id: gameList
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            model: gameModel
+            clip: true // To prevent text from spilling when scrolling.
+            spacing: 15
+
+            // An element of the list
+            delegate: Rectangle {
+                width: gameList.width
+                height: 120
+                color: placeholderColor
+                radius: 12
+
+                // Visual effect (white border) if the element is selected
+                border.color: "white"
+                border.width: gameList.currentIndex === index ? 4 : 0
+
+                Text {
+                    anchors.centerIn: parent
+                    text: title
+                    font.pixelSize: 24
+                    font.bold: true
+                    color: "#2b2b2b"
+                }
+
+                // Selectable zone
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        gameList.currentIndex = index
+                    }
+                }
+            }
+        }
+
+        // Button to validate the selection
+        Rectangle {
+            Layout.fillWidth: true
+            height: 60
+            color: playMouseArea.pressed ? "#3e8e41" : "#4CAF50" // Change color on click
+            radius: 12
+
+            Text {
+                anchors.centerIn: parent
+                // Get the name of the selected game
+                text: "PLAY " + gameModel.get(gameList.currentIndex).title.toUpperCase()
+                color: "white"
+                font.pixelSize: 18
+                font.bold: true
+            }
+
+            MouseArea {
+                id: playMouseArea
+                anchors.fill: parent
+                onClicked: {
+                    console.log("Starting : " + gameModel.get(gameList.currentIndex).title)
+                    // @TODO Changing to selected game window
+                }
+            }
+        }
     }
 }

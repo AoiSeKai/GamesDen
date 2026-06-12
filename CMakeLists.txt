@@ -15,7 +15,7 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick)
 
 # On crée l'exécutable à partir du fichier C++ principal
 qt_add_executable(GamesDen
-    src/main.cpp
+    src/main.cpp    
 )
 
 qt_add_qml_module(GamesDen
@@ -23,7 +23,22 @@ qt_add_qml_module(GamesDen
     VERSION 1.0
     QML_FILES
         src/main.qml
+
+        src/animals/Animals.qml
+        src/Animals/LevelUpView.qml
+        src/animals/AnimalSpritesLayer.qml
+    RESOURCES
+        src/animals/animals.qrc
+
+    SOURCES
+        src/main.cpp
+        src/animals/animalsgame.h
+        src/animals/animalsgame.cpp
+        src/animals/animal.h
+        src/animals/animal.cpp
 )
+
+target_include_directories(GamesDen PRIVATE src/Animals)
 
 target_link_libraries(GamesDen
     PRIVATE

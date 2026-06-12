@@ -1,0 +1,34 @@
+<RCC>
+    <qresource prefix="/animals">
+        <file>assets/bear.png</file>
+        <file>assets/buffalo.png</file>
+        <file>assets/chick.png</file>
+        <file>assets/chicken.png</file>
+        <file>assets/cow.png</file>
+        <file>assets/crocodile.png</file>
+        <file>assets/dog.png</file>
+        <file>assets/duck.png</file>
+        <file>assets/elephant.png</file>
+        <file>assets/frog.png</file>
+        <file>assets/giraffe.png</file>
+        <file>assets/goat.png</file>
+        <file>assets/gorilla.png</file>
+        <file>assets/hippo.png</file>
+        <file>assets/horse.png</file>
+        <file>assets/monkey.png</file>
+        <file>assets/moose.png</file>
+        <file>assets/narwhal.png</file>
+        <file>assets/owl.png</file>
+        <file>assets/panda.png</file>
+        <file>assets/parrot.png</file>
+        <file>assets/penguin.png</file>
+        <file>assets/pig.png</file>
+        <file>assets/rabbit.png</file>
+        <file>assets/rhino.png</file>
+        <file>assets/sloth.png</file>
+        <file>assets/snake.png</file>
+        <file>assets/walrus.png</file>
+        <file>assets/whale.png</file>
+        <file>assets/zebra.png</file>
+    </qresource>
+</RCC>

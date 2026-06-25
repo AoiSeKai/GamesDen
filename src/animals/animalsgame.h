@@ -34,8 +34,9 @@ public:
     QStringList animalQueue() const { return m_animalQueue; }
     QStringList grid() const { return m_grid; }
     QStringList currentBestiary() const { return m_currentBestiary; }
-    QStringList upgradeOptions() const { return m_upgradeOptions; }
+    QStringList upgradeOptions() const { return m_animalOptions; }
     bool isLevelingUp() const { return m_isLevelingUp; }
+    bool isUpgrading() const { return m_isUpgrading; }
     int selectedIndex() const { return m_selectedIndex; }
 
     // Méthodes appelables depuis le QML
@@ -47,8 +48,12 @@ public:
     /// @param index Index on the grid where to place the animal
     Q_INVOKABLE void placeAnimal(int index);
 
-    /// @brief Select the upgrade after leveling up
-    /// @param choiceIndex Index of the upgrade
+    /// @brief Select the animal to ugprade
+    /// @param choiceIndex Index of the choice
+    Q_INVOKABLE void selectNewAnimal(int choiceIndex);
+
+    /// @brief Select the animal to add to bestiary after leveling up
+    /// @param choiceIndex Index of the choice
     Q_INVOKABLE void selectUpgrade(int choiceIndex);
 
     /// @brief Handles a click on a cell
@@ -56,10 +61,21 @@ public:
     /// Second click must target a valid destination cell. It will be handled by QML and call getMovementPath to trigger the animation
     Q_INVOKABLE void handleCellClick(int index);
 
-    /// @returns The complete path from the selected cell to the selected destination
-    Q_INVOKABLE QList<int> getMovementPath(int from, int to);
+
 
     Q_INVOKABLE void finalizeMovement(int from, int to);
+
+
+    Q_INVOKABLE QString getAnimalPower(const QString& animalType) const;
+    Q_INVOKABLE int getAnimalScore(const QString& animalType) const;
+    Q_INVOKABLE QString getAnimalUpgrade(const QString& animalType) const;
+    Q_INVOKABLE int getAnimalUpgradedScore(const QString& animalType) const;
+
+
+    // For debug
+    Q_INVOKABLE QStringList getAllPossibleAnimals() const {
+        return m_allPossibleAnimals;
+    }
 
 signals:
     void scoreChanged();
@@ -72,6 +88,8 @@ signals:
     void selectedIndexChanged();
     /// @param indices List of destroyed cells
     void matchOccurred(const QList<int>& indices);
+
+    void requestMovementAnimation(int fromIndex, QString animalType, QList<int> path);
 
 private:
     /// @brief Get a random animal from the m_currentBestiary to add to m_animalQueue
@@ -89,6 +107,8 @@ private:
     /// However some animals have special movements and might not follow those rules
     bool hasValidPath(int from, int to) const;
 
+    void prepareMovement(int targetIndex);
+
     /// @brief Spawn an animal from m_animalQueue on a random non-occupied cell
     /// @returns the list of cells where animals spawned
     QList<int> spawnNewAnimals();
@@ -99,6 +119,7 @@ private:
     int m_score = 0;            ///< Current score
     int m_currentLevel = 1;     ///< Current level
     bool m_isLevelingUp = false;
+    bool m_isUpgrading = false;
     int m_selectedIndex = -1;   ///< Index of the selected cell. None = -1
 
     QStringList m_animalQueue;  ///< A queue indicating which animals will be placed on the grid next
@@ -107,7 +128,7 @@ private:
     //@brief Current actif bestiary (taken from the pool in animalQueue).
     // Starts with 3 animals
     QStringList m_currentBestiary;
-    QStringList m_upgradeOptions;    // Choices after leveling up
+    QStringList m_animalOptions;    // Choices after leveling up
 
     /// @brief Map to retrieve Animal from their name
     /// K = animal name, V = animal class
@@ -115,8 +136,33 @@ private:
 
     /// @brief contains the list of every possible animals
     const QStringList m_allPossibleAnimals = {
-        "cow", "chicken", "dog", "rabbit", "snake",
-        "panda", "gorilla", "monkey", "crocodile", "whale", "hippo"
+        "rabbit",
+        "cow",
+        //"chicken",
+        //"dog", "snake", "panda", "gorilla", "monkey", "crocodile", "whale", "hippo"
+    };
+
+    // ---- Rewards after level up
+    enum class RewardType {
+        NewAnimal, // Add animal to bestiary
+        Upgrade,   // Upgrade an existing animal
+        None       // Nothing
+    };
+
+    // K = Level, V= Score to get to level up
+    const QMap<int, int> m_levelThresholds = {
+        {2, 500},
+        {3, 1200},
+        {4, 2200},
+        {5, 4000}
+    };
+
+    // K = Level, V = reward
+    const QMap<int, RewardType> m_levelRewards = {
+        {2, RewardType::NewAnimal},
+        {3, RewardType::Upgrade},
+        {4, RewardType::None},
+        {5, RewardType::NewAnimal}
     };
 };
 

@@ -84,7 +84,7 @@ Item {
     // Timer to animate the movement
     Timer {
         id: movementTimer
-        interval: 120
+        interval: 80
         repeat: true
         onTriggered: {
             root.isAnimating = true
@@ -154,5 +154,11 @@ Item {
 
         Behavior on x { enabled: root.isAnimating; NumberAnimation { duration: 110; easing.type: Easing.OutQuad } }
         Behavior on y { enabled: root.isAnimating; NumberAnimation { duration: 110; easing.type: Easing.OutQuad } }
+
+        // Small animation to make it look like rabbit is jumping.
+        transform: Scale {
+            xScale: root.isAnimating && root.animatedAnimalType === "rabbit" ? 1.2 : 1.0
+            yScale: root.isAnimating && root.animatedAnimalType === "rabbit" ? 1.2 : 1.0
+        }
     }
 }

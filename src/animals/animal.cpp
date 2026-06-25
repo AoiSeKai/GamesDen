@@ -1,7 +1,7 @@
 #include "animal.h"
 
-Animal::Animal(QString id, QString name, QString power, QString upgrade, int moveScore, int matchScore)
-    : m_id(id), m_name(name), m_powerDescription(power), m_upgradeDescription(upgrade), m_moveScore(moveScore), m_matchScore(matchScore)
+Animal::Animal(QString id, QString name, QString power, QString upgrade, int moveScore, int matchScore, int upgradedScore)
+    : m_id(id), m_name(name), m_powerDescription(power), m_upgradeDescription(upgrade), m_moveScore(moveScore), m_matchScore(matchScore), m_upgradedScore(upgradedScore), m_isUpgraded(false)
 {
 }
 
@@ -14,6 +14,10 @@ void Animal::setFriends(const QStringList& friendsList) {
     m_friends = friendsList;
 }
 
+void Animal::setUpgraded(bool isUpgraded) {
+    m_isUpgraded = isUpgraded;
+}
+
 
 int Animal::calculateScore(int matchCount, bool isMovedByUser) const {
     // Match without moving (ex: spawn)
@@ -23,12 +27,14 @@ int Animal::calculateScore(int matchCount, bool isMovedByUser) const {
 
     int score = isMovedByUser ? m_moveScore : 0; // Add moving score
 
-    score += 3 * m_matchScore; // Add matching score
+    int matchScore = m_isUpgraded ? m_upgradedScore : m_matchScore;
+
+    score += 3 * matchScore; // Add matching score
 
     // Double score for matching over 3
     if (matchCount > 3) {
         int surplus = matchCount - 3;
-        score += surplus * (2 * m_matchScore);
+        score += surplus * (2 * matchScore);
     }
 
     return score;
@@ -83,4 +89,80 @@ QSet<int> Animal::getMatchIndices(int startIndex, const QList<QString>& grid) co
     if (verticalMatch.size() >= 3) matchedIndices.unite(verticalMatch);
 
     return matchedIndices;
+}
+
+
+
+QList<int> Animal::getMovementPath(int from, int to, const QList<QString>& grid) const
+{
+    QList<int> path;
+
+    // Check bounds
+    if (from < 0 || from >= 35 || to < 0 || to >= 35) return path;
+    if (from == to) return path;
+    if (!grid.at(to).isEmpty()) return path;  // Destination is occupied
+
+    // grid dimension
+    const int COLS = 7;
+    const int ROWS = 5;
+
+    /// NOTE : Using Breadth-First Search (BFS) to validate the path
+
+    // Queue to mark visited cells
+    QQueue<int> queue;
+    QMap<int, int> parentMap; // visiting cell -> from parent cell
+
+    queue.enqueue(from);
+    parentMap.insert(from, -1); // First cell has no parent
+
+    // The allowed 1-cell movement (UP, DOWN, LEFT, RIGHT)
+    const int dirX[] = {0, 0, -1, 1};
+    const int dirY[] = {-1, 1, 0, 0};
+    bool destinationReached = false;
+
+    while (!queue.isEmpty()) {
+        int current = queue.dequeue();
+
+        // Reached destination so path is valid.
+        if (current == to) {
+            destinationReached = true;
+            break;
+        }
+
+        int currX = current % COLS;
+        int currY = current / COLS;
+
+        // Try every neighbour cells
+        for (int i = 0; i < 4; ++i) {
+            int nextX = currX + dirX[i];
+            int nextY = currY + dirY[i];
+            int nextIndex = nextY * COLS + nextX;
+
+            // Checks grid's bounds
+            if (nextX >= 0 && nextX < COLS && nextY >= 0 && nextY < ROWS) {
+                // If cell was not visited yet and is not empty
+                if (!parentMap.contains(nextIndex) && (grid.at(nextIndex).isEmpty() || nextIndex == to)) {
+                    parentMap.insert(nextIndex, current); // Mark where we are coming from
+                    queue.enqueue(nextIndex);
+                }
+            }
+        }
+    }
+
+    // Reconstruct the path
+    if (destinationReached) {
+        int current = to;
+        // We trace back from parent to parent until we reach the starting point
+        while (current != -1) {
+            path.prepend(current); // Order = from -> ... -> to
+            current = parentMap.value(current);
+        }
+
+        // Remove "from" since it is not needed
+        if (!path.isEmpty()) {
+            path.removeFirst();
+        }
+    }
+
+    return path;
 }

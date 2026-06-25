@@ -1,8 +1,12 @@
 #include "animalsgame.h"
 #include <QRandomGenerator>
+#include "rabbit.h"
 
 AnimalsGame::AnimalsGame(QObject *parent) : QObject(parent)
 {
+    m_animalRegistry.insert("rabbit", new Rabbit());
+
+
     // @TODO
     m_animalRegistry.insert("gorilla", new Animal("gorilla", "gorilla",
                                                   "Can be matched with monkeys but only get half points",
@@ -15,9 +19,6 @@ AnimalsGame::AnimalsGame(QObject *parent) : QObject(parent)
     m_animalRegistry.insert("chicken", new Animal("chicken", "chicken",
                                                   "Can match as long as they are next to each others. But you need at least 5 of them to have a match."
                                                   "Can match as long as they are next to each others. <s>But you need at least 5 of them to have a match.</s>"));
-
-
-    m_animalRegistry.insert("rabbit", new Animal("rabbit", "rabbit", "Can jump over animals when moving"));
     m_animalRegistry.insert("snake", new Animal("snake", "snake", "Does not finish turn as long as the movement makes a match"));
 
     m_animalRegistry.insert("dog", new Animal("dog", "dog", "Call the nearest dog and make it move next to him if possible"));
@@ -133,46 +134,67 @@ void AnimalsGame::advanceQueue()
 }
 
 void AnimalsGame::checkLevelUp() {
+    int nextLevel = m_currentLevel + 1;
 
-    // @TODO Change the condition for level up
-    // Level up every 1000 points
-    if (m_score >= m_currentLevel * 1000) {
-        m_isLevelingUp = true;
-        m_upgradeOptions.clear();
+    // Max level reached already, nothing to add.
+    if (!m_levelThresholds.contains(nextLevel)) {
+        return;
+    }
 
+    // Check if score reached a threshold
+    if (m_score >= m_levelThresholds.value(nextLevel)) {
+        m_currentLevel = nextLevel;
+        m_animalOptions.clear();
 
-        if (m_currentLevel == 1) {
-            // LEVEL 2 =  Choose 2 animals from the whole pool that are not already selected in the current pool
-            while(m_upgradeOptions.size() < 2) {
+        // Get the reward type
+        RewardType reward = m_levelRewards.value(m_currentLevel, RewardType::None);
+
+        // Selecting a new animal
+        if (reward == RewardType::NewAnimal) {
+            m_isLevelingUp = true;
+            m_isUpgrading = false;
+
+            // Choose between 2 new animals to add to current bestiary
+            while (m_animalOptions.size() < 2) {
                 QString cand = m_allPossibleAnimals.at(QRandomGenerator::global()->bounded(m_allPossibleAnimals.size()));
-                if(!m_currentBestiary.contains(cand) && !m_upgradeOptions.contains(cand)) {
-                    m_upgradeOptions.append(cand);
+                if (!m_currentBestiary.contains(cand) && !m_animalOptions.contains(cand)) {
+                    m_animalOptions.append(cand);
                 }
             }
         }
-        else if (m_currentLevel == 2) {
-            // LEVEL 3 : Upgrade an animal from the bestiary
-            // Pick 2 animals from the bestiary to choose from
+        // Upgrade an animal
+        else if (reward == RewardType::Upgrade) {
+            m_isLevelingUp = false;
+            m_isUpgrading = true;
+
+            // Choose between 2 animals from current bestiary to upgrade
             if (m_currentBestiary.size() >= 2) {
-                while(m_upgradeOptions.size() < 2) {
+                while (m_animalOptions.size() < 2) {
                     QString cand = m_currentBestiary.at(QRandomGenerator::global()->bounded(m_currentBestiary.size()));
-                    if(!m_upgradeOptions.contains(cand)) {
-                        m_upgradeOptions.append(cand);
+                    if (!m_animalOptions.contains(cand)) {
+                        m_animalOptions.append(cand);
                     }
                 }
             }
         }
+        // Nothing
+        else {
+            m_isLevelingUp = false;
+            m_isUpgrading = false;
+        }
+
+        emit currentLevelChanged();
         emit stateChanged();
         emit upgradeChanged();
     }
 }
 
-void AnimalsGame::selectUpgrade(int choiceIndex)
+void AnimalsGame::selectNewAnimal(int choiceIndex)
 {
-    if (choiceIndex < 0 || choiceIndex >= m_upgradeOptions.size()) return;
+    if (choiceIndex < 0 || choiceIndex >= m_animalOptions.size()) return;
 
     // Add animal to bestiary
-    m_currentBestiary.append(m_upgradeOptions.at(choiceIndex));
+    m_currentBestiary.append(m_animalOptions.at(choiceIndex));
 
     // Level up
     m_currentLevel++;
@@ -182,6 +204,34 @@ void AnimalsGame::selectUpgrade(int choiceIndex)
     emit currentLevelChanged();
     emit stateChanged();
 }
+
+void AnimalsGame::selectUpgrade(int choiceIndex) {
+
+    if (choiceIndex < 0 || choiceIndex >= m_animalOptions.size()) {
+        qWarning() << "⚠ selectUpgrade: Invalid index :" << choiceIndex;
+        return;
+    }
+
+    // Get the animal id
+    QString selectedAnimalType = m_animalOptions.at(choiceIndex);
+
+    // Upgrading animal
+    if (m_animalRegistry.contains(selectedAnimalType)) {
+        Animal* animal = m_animalRegistry.value(selectedAnimalType);
+        if (animal) {
+            animal->setUpgraded(true);
+        }
+    } else {
+        qWarning() << "Error: unknown animal " << selectedAnimalType;
+    }
+
+    m_animalOptions.clear();
+    m_isUpgrading = false;
+
+    emit stateChanged();
+    emit upgradeChanged();
+}
+
 
 void AnimalsGame::handleCellClick(int index)
 {
@@ -203,6 +253,12 @@ void AnimalsGame::handleCellClick(int index)
         return;
     }
 
+    // An animal is selected and we are moving it to an empty cell.
+    if (m_grid.at(index).isEmpty()) {
+        prepareMovement(index);
+        return;
+    }
+
 
     // If click on another animal, change selection
     if (!m_grid.at(index).isEmpty()) {
@@ -212,80 +268,21 @@ void AnimalsGame::handleCellClick(int index)
     }
 }
 
-QList<int> AnimalsGame::getMovementPath(int from, int to)
+void AnimalsGame::prepareMovement(int targetIndex)
 {
-    QList<int> path;
+    // On récupère l'instance de l'animal dans le registre via son type (string)
+    QString animalType = m_grid.at(m_selectedIndex);
+    Animal* animal = m_animalRegistry.value(animalType);
 
-    // Check bounds
-    if (from < 0 || from >= 35 || to < 0 || to >= 35) return path;
-    if (from == to) return path;
-    if (!m_grid.at(to).isEmpty()) return path;  // Destination is occupied
+    if (animal) {
+        // On demande à l'animal de calculer son chemin (Rabbit override, les autres utilisent le défaut)
+        QList<int> path = animal->getMovementPath(m_selectedIndex, targetIndex, m_grid);
 
-    // grid dimension
-    const int COLS = 7;
-    const int ROWS = 5;
-
-    /// NOTE : Using Breadth-First Search (BFS) to validate the path
-
-    // Queue to mark visited cells
-    QQueue<int> queue;
-    QMap<int, int> parentMap; // visiting cell -> from parent cell
-
-    queue.enqueue(from);
-    parentMap.insert(from, -1); // First cell has no parent
-
-    // The allowed 1-cell movement (UP, DOWN, LEFT, RIGHT)
-    const int dirX[] = {0, 0, -1, 1};
-    const int dirY[] = {-1, 1, 0, 0};
-    bool destinationReached = false;
-
-    while (!queue.isEmpty()) {
-        int current = queue.dequeue();
-
-        // Reached destination so path is valid.
-        if (current == to) {
-            destinationReached = true;
-            break;
-        }
-
-        int currX = current % COLS;
-        int currY = current / COLS;
-
-        // Try every neighbour cells
-        for (int i = 0; i < 4; ++i) {
-            int nextX = currX + dirX[i];
-            int nextY = currY + dirY[i];
-            int nextIndex = nextY * COLS + nextX;
-
-            // Checks grid's bounds
-            if (nextX >= 0 && nextX < COLS && nextY >= 0 && nextY < ROWS) {
-                // If cell was not visited yet and is not empty
-                if (!parentMap.contains(nextIndex) && (m_grid.at(nextIndex).isEmpty() || nextIndex == to)) {
-                    parentMap.insert(nextIndex, current); // Mark where we are coming from
-                    queue.enqueue(nextIndex);
-                }
-            }
-        }
-    }
-
-    // Reconstruct the path
-    if (destinationReached) {
-        int current = to;
-        // We trace back from parent to parent until we reach the starting point
-        while (current != -1) {
-            path.prepend(current); // Order = from -> ... -> to
-            current = parentMap.value(current);
-        }
-
-        // Remove "from" since it is not needed
         if (!path.isEmpty()) {
-            path.removeFirst();
+            emit requestMovementAnimation(m_selectedIndex, animalType, path);
         }
     }
-
-    return path;
 }
-
 
 void AnimalsGame::finalizeMovement(int from, int to) {
     if (from < 0 || from >= 35 || to < 0 || to >= 35) return;
@@ -371,3 +368,41 @@ QList<int> AnimalsGame::spawnNewAnimals()
     emit animalQueueChanged();
     return spawnedIndices;
 }
+
+
+QString AnimalsGame::getAnimalPower(const QString& animalType) const {
+    Animal* animal = m_animalRegistry.value(animalType);
+    if (animal) {
+        return animal->powerDescription();
+    }
+
+    return "Error: Unknown animal";
+}
+
+int AnimalsGame::getAnimalScore(const QString& animalType) const {
+    Animal* animal = m_animalRegistry.value(animalType);
+    if (animal) {
+        return animal->score();
+    }
+
+    return -1;
+}
+
+QString AnimalsGame::getAnimalUpgrade(const QString& animalType) const {
+    Animal* animal = m_animalRegistry.value(animalType);
+    if (animal) {
+        return animal->upgradeDescription();
+    }
+
+    return "Error: Unknown animal";
+}
+
+int AnimalsGame::getAnimalUpgradedScore(const QString& animalType) const {
+    Animal* animal = m_animalRegistry.value(animalType);
+    if (animal) {
+        return animal->upgradedScore();
+    }
+
+    return -1;
+}
+

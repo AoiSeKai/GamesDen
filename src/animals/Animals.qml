@@ -19,19 +19,17 @@ Item { // Adds a wrapper that will go from Portrait or Landscape view
         }
     }
 
+    Connections {
+        target: gameEngine
+        function onRequestMovementAnimation(fromIndex, animalType, path) {
+            spritesLayer.playMovement(fromIndex, animalType, path)
+        }
+    }
+
     // Called when we click on an empty cell
     // Will start the movement animation
     function startMovement(clickedIndex) {
-        if (gameEngine.selectedIndex !== -1 && gameEngine.grid[clickedIndex] === "") {
-            let path = gameEngine.getMovementPath(gameEngine.selectedIndex, clickedIndex)
-            if (path.length > 0) {
-                spritesLayer.playMovement(gameEngine.selectedIndex, gameEngine.grid[gameEngine.selectedIndex], path)
-            } else {
-                gameEngine.handleCellClick(clickedIndex)
-            }
-        } else {
-            gameEngine.handleCellClick(clickedIndex)
-        }
+        gameEngine.handleCellClick(clickedIndex)
     }
 
 
@@ -190,16 +188,94 @@ Item { // Adds a wrapper that will go from Portrait or Landscape view
             id: levelUpLayer
             anchors.fill: parent
 
+
+            // Debug property
+            property bool forceVisible: false
+            property var debugOptions: []
+
             // Linking datas
-            options: gameEngine.upgradeOptions
+            options: forceVisible ? debugOptions : gameEngine.upgradeOptions
             assetPath: wrapper.assetPath
+            animalGameEngine: gameEngine
 
             // Display only on level up
-            visible: gameEngine.isLevelingUp
+            visible: gameEngine.isLevelingUp || forceVisible
 
             onAnimalSelected: (index) => {
-                gameEngine.selectUpgrade(index)
+                if (forceVisible) {
+                    forceVisible = false
+                } else {
+                    gameEngine.selectNewAnimal(index)
+                }
             }
+        }
+
+        // Overlay when upgrading
+        UpgradeView {
+            id: upgradeLayer
+            anchors.fill: parent
+
+
+            // Debug property
+            property bool forceVisible: false
+            property var debugOptions: []
+
+            // Linking datas
+            options: forceVisible ? debugOptions : gameEngine.upgradeOptions
+            assetPath: wrapper.assetPath
+            animalGameEngine: gameEngine
+
+            // Display only on level up
+            visible: gameEngine.isUpgrading || forceVisible
+
+            onAnimalSelected: (index) => {
+                if (forceVisible) {
+                    forceVisible = false
+                } else {
+                    gameEngine.selectUpgrade(index)
+                }
+            }
+        }
+    }
+
+
+
+
+    // DEBUG MODE ONLY
+    Loader {
+        id: debugLoader
+        active: true // True = debug. Set to false to remove debug mode.
+
+        sourceComponent: Component {
+            DebugManager {
+                // On laisse vide ici pour l'instant, on va injecter par le bas
+                assetPath: wrapper.assetPath
+            }
+        }
+        onStatusChanged: {
+            if (debugLoader.status === Loader.Ready) {
+                debugLoader.item.gameEngine = gameEngine
+                debugLoader.item.spritesLayer = spritesLayer
+                debugLoader.item.refreshAnimals()
+            }
+        }
+
+        Connections {
+            target: debugLoader.item
+
+            function onRequestLevelUpSimulation(animal1, animal2) {
+                console.log("Simulation du Level Up avec :", animal1, "et", animal2)
+                levelUpLayer.debugOptions = [ animal1, animal2 ]
+                levelUpLayer.forceVisible = true
+            }
+
+            function onRequestUpgradeSimulation(animal1, animal2) {
+                console.log("Simulation de l'amélioration avec :", animal1, "et", animal2)
+                upgradeLayer.debugOptions = [ animal1, animal2 ]
+                upgradeLayer.forceVisible = true
+            }
+
+
         }
     }
 }

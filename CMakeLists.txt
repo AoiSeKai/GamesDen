@@ -25,8 +25,10 @@ qt_add_qml_module(GamesDen
         src/main.qml
 
         src/animals/Animals.qml
-        src/Animals/LevelUpView.qml
+        src/animals/LevelUpView.qml
+        src/animals/UpgradeView.qml
         src/animals/AnimalSpritesLayer.qml
+        src/animals/DebugManager.qml
     RESOURCES
         src/animals/animals.qrc
 
@@ -36,9 +38,12 @@ qt_add_qml_module(GamesDen
         src/animals/animalsgame.cpp
         src/animals/animal.h
         src/animals/animal.cpp
+
+        src/animals/rabbit.h
+        src/animals/rabbit.cpp
 )
 
-target_include_directories(GamesDen PRIVATE src/Animals)
+target_include_directories(GamesDen PRIVATE src/animals)
 
 target_link_libraries(GamesDen
     PRIVATE

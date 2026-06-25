@@ -15,25 +15,6 @@ Rectangle {
     // Signal parent which choice was selected
     signal animalSelected(int index)
 
-    // @TODO Placeholder - Will be moved to C++
- /*   function getDescription(animal) {
-        const powers = {
-            "cow": "Produit du lait : Double les points des voisins.",
-            "chicken": "Effet de groupe : +50 pts par poulet adjacent.",
-            "dog": "Gardien : Empeche les predateurs d'approcher.",
-            "rabbit": "Prolifique : Se multiplie sur une case vide.",
-            "snake": "Chasseur : Mange les petits animaux alentours.",
-            "panda": "Zen : Stabilise le score du niveau.",
-            "gorilla": "Puissance : Ecrase les cases bloquees.",
-            "monkey": "Agile : Peut se deplacer apres la pose.",
-            "crocodile": "Aquatique : Bonus sur les bords de grille.",
-            "whale": "Geant : Occupe 2 cases au lieu d'une.",
-            "narwhal": "Perceur : Aligne les scores en colonne.",
-            "hippo": "Affame : Consomme les bonus de la grille."
-        };
-        return powers[animal] || "Un mysterieux animal aux pouvoirs caches...";
-    }*/
-
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 30
@@ -48,7 +29,7 @@ Rectangle {
         }
 
         Text {
-            text: "CHOOSE YOUR NEW ANIMAL"
+            text: "CHOOSE YOUR UPGRADE"
             color: "white"
             font.pixelSize: 17
             font.letterSpacing: 2
@@ -100,16 +81,17 @@ Rectangle {
 
                             Rectangle {
                                 height: 24
-                                width: scoreText.width + 25
+                                width: scoreLayout.implicitWidth + 16
                                 color: "#2a2a2a"
                                 radius: 12
-                                border.color: "#deff9a"
+                                border.color: "#7f5af0"
                                 border.width: 1
                                 Layout.alignment: Qt.AlignVCenter
 
                                 RowLayout {
+                                    id: scoreLayout
                                     anchors.centerIn: parent
-                                    spacing: 3
+                                    spacing: 5
 
                                     Text {
                                         text: "⭐"
@@ -117,10 +99,30 @@ Rectangle {
                                         Layout.alignment: Qt.AlignVCenter
                                     }
 
+                                    // Previous score
+                                    Text {
+                                        text: root.animalGameEngine ? root.animalGameEngine.getAnimalScore(modelData) : "0"
+                                        color: "#aaaaaa"
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        font.strikeout: true
+                                        Layout.alignment: Qt.AlignVCenter
+                                    }
+
+
+                                    Text {
+                                        text: "➔"
+                                        color: "#7f5af0"
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                        Layout.alignment: Qt.AlignVCenter
+                                    }
+
+                                    // New score
                                     Text {
                                         id: scoreText
-                                        text: root.animalGameEngine ? root.animalGameEngine.getAnimalScore(modelData) + " PTS" : "0 PTS"
-                                        color: "#deff9a"
+                                        text: root.animalGameEngine ? root.animalGameEngine.getAnimalUpgradedScore(modelData) + " PTS" : "0 PTS"
+                                        color: "#2cb67d"
                                         font.pixelSize: 11
                                         font.bold: true
                                         Layout.alignment: Qt.AlignVCenter

@@ -31,4 +31,8 @@
         <file>assets/whale.png</file>
         <file>assets/zebra.png</file>
     </qresource>
+    <qresource prefix="/">
+        <file>DebugManager.qml</file>
+        <file>UpgradeView.qml</file>
+    </qresource>
 </RCC>

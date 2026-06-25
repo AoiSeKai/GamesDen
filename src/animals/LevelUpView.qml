@@ -10,12 +10,13 @@ Rectangle {
     // WARNING: Properties that must be filled by parent
     property var options: []
     property string assetPath: ""
+    property var animalGameEngine: null
 
     // Signal parent which choice was selected
     signal animalSelected(int index)
 
     // @TODO Placeholder - Will be moved to C++
-    function getDescription(animal) {
+ /*   function getDescription(animal) {
         const powers = {
             "cow": "Produit du lait : Double les points des voisins.",
             "chicken": "Effet de groupe : +50 pts par poulet adjacent.",
@@ -31,7 +32,7 @@ Rectangle {
             "hippo": "Affame : Consomme les bonus de la grille."
         };
         return powers[animal] || "Un mysterieux animal aux pouvoirs caches...";
-    }
+    }*/
 
     ColumnLayout {
         anchors.fill: parent
@@ -41,7 +42,7 @@ Rectangle {
         Text {
             text: "LEVEL UP"
             color: "#deff9a"
-            font.pixelSize: 36
+            font.pixelSize: 30
             font.bold: true
             Layout.alignment: Qt.AlignHCenter
         }
@@ -49,14 +50,14 @@ Rectangle {
         Text {
             text: "CHOOSE YOUR NEW ANIMAL"
             color: "white"
-            font.pixelSize: 20
+            font.pixelSize: 17
             font.letterSpacing: 2
             Layout.alignment: Qt.AlignHCenter
         }
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 30
+            spacing: 20
 
             Repeater {
                 model: root.options
@@ -82,17 +83,56 @@ Rectangle {
                             fillMode: Image.PreserveAspectFit
                         }
 
-                        Text {
-                            text: modelData.toUpperCase()
-                            color: "white"
-                            font.pixelSize: 20
-                            font.bold: true
+                        // Name + Score
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.leftMargin: 5
+                            Layout.rightMargin: 5
                             Layout.alignment: Qt.AlignHCenter
+
+                            Text {
+                                text: modelData.toUpperCase()
+                                color: "white"
+                                font.pixelSize: 18
+                                font.bold: true
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Rectangle {
+                                height: 24
+                                width: scoreText.width + 25
+                                color: "#2a2a2a"
+                                radius: 12
+                                border.color: "#deff9a"
+                                border.width: 1
+                                Layout.alignment: Qt.AlignVCenter
+
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 3
+
+                                    Text {
+                                        text: "⭐"
+                                        font.pixelSize: 10
+                                        Layout.alignment: Qt.AlignVCenter
+                                    }
+
+                                    Text {
+                                        id: scoreText
+                                        text: root.animalGameEngine ? root.animalGameEngine.getAnimalScore(modelData) + " PTS" : "0 PTS"
+                                        color: "#deff9a"
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        Layout.alignment: Qt.AlignVCenter
+                                    }
+                                }
+                            }
                         }
+
 
                         // Invisible rectangle to force text to take place
                         Text {
-                            text: root.getDescription(modelData)
+                            text: root.animalGameEngine ? root.animalGameEngine.getAnimalPower(modelData) : "Error: Engine not found"
                             color: "#aaa"
                             font.pixelSize: 15
                             wrapMode: Text.WordWrap
